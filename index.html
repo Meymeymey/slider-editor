@@ -723,6 +723,13 @@
               <div class="image-preview-placeholder">Ebenen-Vorschau</div>
             </div>
           </div>
+
+          <!-- Parallax Strength (für alle Medientypen) -->
+          <div class="form-group" style="margin-top:20px; padding-top:15px; border-top:1px solid #eee;">
+            <label>Parallax-Stärke: <span id="parallaxStrengthValue">100%</span></label>
+            <input type="range" id="parallaxStrength" min="0" max="200" value="100" oninput="updateParallaxStrength()" style="width:100%;">
+            <small>Steuert wie stark sich das Hintergrundbild/Video bei Mausbewegung bewegt. 0% = Aus, 100% = Normal, 200% = Stark</small>
+          </div>
         </div>
 
         <!-- Buttons -->
@@ -892,6 +899,7 @@
         image: '',
         mediaType: 'image',
         layers: ['', '', '', '', ''],
+        parallaxStrength: 100,
         button1Text: 'Mehr erfahren',
         button1Link: '',
         button2Text: '',
@@ -934,6 +942,11 @@
         document.getElementById('layer' + i).value = layers[i - 1] || '';
       }
 
+      // Parallax strength
+      const strength = slide.parallaxStrength !== undefined ? slide.parallaxStrength : 100;
+      document.getElementById('parallaxStrength').value = strength;
+      document.getElementById('parallaxStrengthValue').textContent = strength + '%';
+
       // Media Type setzen
       const mediaType = slide.mediaType || 'image';
       setMediaType(mediaType, false);
@@ -942,6 +955,15 @@
         updateLayersPreview(layers);
       } else {
         updateMediaPreview(slide.image, mediaType);
+      }
+    }
+
+    // Parallax strength update
+    function updateParallaxStrength() {
+      const strength = document.getElementById('parallaxStrength').value;
+      document.getElementById('parallaxStrengthValue').textContent = strength + '%';
+      if (currentSlideIndex >= 0) {
+        slides[currentSlideIndex].parallaxStrength = parseInt(strength);
       }
     }
 
@@ -1012,6 +1034,7 @@
         image: document.getElementById('slideImage').value,
         mediaType: mediaType,
         layers: layers,
+        parallaxStrength: parseInt(document.getElementById('parallaxStrength').value) || 100,
         button1Text: document.getElementById('slideButton1Text').value,
         button1Link: document.getElementById('slideButton1Link').value,
         button2Text: document.getElementById('slideButton2Text').value,
@@ -1191,7 +1214,8 @@
           slides = slides.map(slide => ({
             ...slide,
             mediaType: slide.mediaType || 'image',
-            layers: slide.layers || ['', '', '', '', '']
+            layers: slide.layers || ['', '', '', '', ''],
+            parallaxStrength: slide.parallaxStrength !== undefined ? slide.parallaxStrength : 100
           }));
           renderSlideList();
           if (slides.length > 0) {
@@ -1239,9 +1263,10 @@
           mediaHTML = `        <img src="${slide.image || ''}" alt="${slide.title || ''}" class="hero-slide-media hero-slide-image">`;
         }
 
+        const parallaxStrength = slide.parallaxStrength !== undefined ? slide.parallaxStrength : 100;
         slidesHTML += `
       <!-- Slide ${i + 1} -->
-      <div class="hero-slide" data-media-type="${slide.mediaType || 'image'}">
+      <div class="hero-slide" data-media-type="${slide.mediaType || 'image'}" data-parallax-strength="${parallaxStrength}">
 ${mediaHTML}
         <div class="hero-slide-content">
           <h2 class="hero-slide-title">${slide.title || ''}</h2>
@@ -1256,12 +1281,15 @@ ${buttonsHTML.trimEnd()}
 
       return `<style>
   /* HERO SLIDER - WordPress/Elementor Compatible with Parallax Layers */
-  .hero-slider, .hero-slider * { box-sizing: border-box !important; margin: 0 !important; padding: 0 !important; }
-  .hero-slider { position: relative !important; width: 100vw !important; max-width: 100vw !important; height: calc(100vh - 120px) !important; min-height: 400px !important; overflow: hidden !important; display: block !important; margin-left: calc(-50vw + 50%) !important; }
+  /* WordPress container overrides */
+  .elementor-section, .elementor-section-wrap, .elementor-section-boxed, .elementor-container, .elementor-column, .elementor-column-wrap, .elementor-widget-wrap, .elementor-widget-html, .elementor-widget-html .elementor-widget-container { max-width: none !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; margin-left: 0 !important; margin-right: 0 !important; overflow: visible !important; }
+  html, body { overflow-x: hidden !important; }
+  .hero-slider, .hero-slider * { box-sizing: border-box !important; }
+  .hero-slider { position: relative !important; width: 100vw !important; max-width: 100vw !important; height: calc(100vh - 120px) !important; min-height: 400px !important; overflow: hidden !important; display: block !important; margin-left: calc(-50vw + 50%) !important; margin-right: calc(-50vw + 50%) !important; padding: 0 !important; }
   .hero-slider-track { display: flex !important; flex-wrap: nowrap !important; height: 100% !important; width: 100% !important; transition: transform 0.6s ease-in-out !important; gap: 0 !important; }
-  .hero-slide { position: relative !important; min-width: 100% !important; width: 100% !important; height: 100% !important; flex-shrink: 0 !important; flex-grow: 0 !important; flex-basis: 100% !important; overflow: hidden !important; }
-  .hero-slide-media { position: absolute !important; top: -5% !important; left: -5% !important; width: 110% !important; height: 110% !important; object-fit: cover !important; object-position: center center !important; display: block !important; transition: transform 0.15s ease-out !important; will-change: transform !important; }
-  .hero-slide-layer { position: absolute !important; top: -5% !important; left: -5% !important; width: 110% !important; height: 110% !important; object-fit: cover !important; object-position: center center !important; display: block !important; transition: transform 0.15s ease-out !important; will-change: transform !important; }
+  .hero-slide { position: relative !important; min-width: 100vw !important; width: 100vw !important; height: 100% !important; flex-shrink: 0 !important; flex-grow: 0 !important; flex-basis: 100vw !important; overflow: hidden !important; }
+  .hero-slide-media { position: absolute !important; top: -10% !important; left: -10% !important; right: -10% !important; bottom: -10% !important; width: auto !important; height: auto !important; min-width: 120% !important; min-height: 120% !important; object-fit: cover !important; object-position: center center !important; display: block !important; transition: transform 0.15s ease-out !important; will-change: transform !important; }
+  .hero-slide-layer { position: absolute !important; top: -10% !important; left: -10% !important; right: -10% !important; bottom: -10% !important; width: auto !important; height: auto !important; min-width: 120% !important; min-height: 120% !important; object-fit: cover !important; object-position: center center !important; display: block !important; transition: transform 0.15s ease-out !important; will-change: transform !important; }
   .hero-slide-video { object-position: center center !important; }
   .hero-slide-content { position: absolute !important; bottom: 80px !important; left: 5% !important; max-width: 45% !important; z-index: 20 !important; }
   .hero-slide-title { display: inline-block !important; background: #ffffff !important; color: #003366 !important; font-size: 2.5rem !important; font-weight: 700 !important; padding: 15px 25px !important; margin: 0 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; line-height: 1.2 !important; }
@@ -1380,18 +1408,21 @@ ${slidesHTML}
   function applyParallax(x, y) {
     var currentSlideEl = slides[currentSlide];
     if (currentSlideEl) {
+      var strength = parseFloat(currentSlideEl.getAttribute('data-parallax-strength')) || 100;
+      if (strength === 0) return;
+      var multiplier = strength / 100;
       var mediaType = currentSlideEl.getAttribute('data-media-type');
       if (mediaType === 'parallax') {
         var layers = currentSlideEl.querySelectorAll('.hero-slide-layer');
         for (var i = 0; i < layers.length; i++) {
           var depth = parseFloat(layers[i].getAttribute('data-depth')) || 0.3;
-          var moveX = x * 50 * depth;
-          var moveY = y * 35 * depth;
+          var moveX = x * 50 * depth * multiplier;
+          var moveY = y * 35 * depth * multiplier;
           layers[i].style.transform = 'translate(' + moveX + 'px, ' + moveY + 'px)';
         }
       } else {
         var media = currentSlideEl.querySelector('.hero-slide-media');
-        if (media) { media.style.transform = 'translate(' + (x * -20) + 'px, ' + (y * -15) + 'px) scale(1.02)'; }
+        if (media) { media.style.transform = 'translate(' + (x * -20 * multiplier) + 'px, ' + (y * -15 * multiplier) + 'px) scale(' + (1 + 0.02 * multiplier) + ')'; }
       }
     }
   }
@@ -1559,7 +1590,8 @@ ${slidesHTML}
           slides = slides.map(slide => ({
             ...slide,
             mediaType: slide.mediaType || 'image',
-            layers: slide.layers || ['', '', '', '', '']
+            layers: slide.layers || ['', '', '', '', ''],
+            parallaxStrength: slide.parallaxStrength !== undefined ? slide.parallaxStrength : 100
           }));
           renderSlideList();
           if (slides.length > 0) {
@@ -1604,7 +1636,7 @@ ${slidesHTML}
 
     function downloadProjectCSV() {
       // CSV Header
-      const headers = ['Titel', 'Beschreibung', 'GrafikURL', 'MediaType', 'Link1', 'Link1Text', 'Link2', 'Link2Text', 'Layer1', 'Layer2', 'Layer3', 'Layer4', 'Layer5'];
+      const headers = ['Titel', 'Beschreibung', 'GrafikURL', 'MediaType', 'ParallaxStrength', 'Link1', 'Link1Text', 'Link2', 'Link2Text', 'Layer1', 'Layer2', 'Layer3', 'Layer4', 'Layer5'];
 
       // Escape function for CSV values
       const escapeCSV = (val) => {
@@ -1626,6 +1658,7 @@ ${slidesHTML}
           escapeCSV(slide.description || ''),
           escapeCSV(slide.image || ''),
           escapeCSV(slide.mediaType || 'image'),
+          escapeCSV(slide.parallaxStrength !== undefined ? slide.parallaxStrength : 100),
           escapeCSV(slide.button1Link || ''),
           escapeCSV(slide.button1Text || ''),
           escapeCSV(slide.button2Link || ''),
@@ -1666,7 +1699,8 @@ ${slidesHTML}
             slides = slides.map(slide => ({
               ...slide,
               mediaType: slide.mediaType || 'image',
-              layers: slide.layers || ['', '', '', '', '']
+              layers: slide.layers || ['', '', '', '', ''],
+              parallaxStrength: slide.parallaxStrength !== undefined ? slide.parallaxStrength : 100
             }));
             renderSlideList();
             if (slides.length > 0) {
@@ -1712,6 +1746,8 @@ ${slidesHTML}
         const values = parseCSVLine(lines[i], delimiter);
         const mediaTypeIndex = headers.indexOf('MediaType');
         const mediaTypeVal = mediaTypeIndex >= 0 ? values[mediaTypeIndex] : '';
+        const parallaxStrengthIndex = headers.indexOf('ParallaxStrength');
+        const parallaxStrengthVal = parallaxStrengthIndex >= 0 ? parseInt(values[parallaxStrengthIndex]) : 100;
         const slide = {
           id: Date.now() + i,
           title: values[headers.indexOf('Titel')] || '',
@@ -1723,6 +1759,7 @@ ${slidesHTML}
           image: values[headers.indexOf('GrafikURL')] || '',
           mediaType: mediaTypeVal.toLowerCase() === 'video' ? 'video' :
                      mediaTypeVal.toLowerCase() === 'parallax' ? 'parallax' : 'image',
+          parallaxStrength: isNaN(parallaxStrengthVal) ? 100 : parallaxStrengthVal,
           layers: [
             values[headers.indexOf('Layer1')] || '',
             values[headers.indexOf('Layer2')] || '',
